@@ -5,6 +5,9 @@ library(ggplot2)
 library("plyr")
 library(usdata)
 library("dplyr")
+library("plotly", warn.conflicts = FALSE)
+library("leaflet", warn.conflicts = FALSE)
+library("maps")
 
 data <- read_csv("https://raw.githubusercontent.com/vera-institute/incarceration-trends/master/incarceration_trends.csv")
 
@@ -77,5 +80,149 @@ highest_asian_county <- data %>%
   pull(county_name)
 
 
-  
+#Trend over time 
+#Shows the increase or decrease of prison in different kind of race over the time periods from 2001 to 2018
 
+black_prison <- data %>%
+  select(year, black_prison_pop) %>%
+  group_by(year) %>%
+  filter(year > 2000)%>%
+  filter(year < 2017)%>%
+  group_by(year) %>%
+  summarise(black = sum(black_prison_pop, na.rm = TRUE)) 
+
+latin_prison <- data %>%
+  select(year, latinx_prison_pop) %>%
+  group_by(year) %>%
+  filter(year > 2000)%>%
+  filter(year < 2017)%>%
+  group_by(year) %>%
+  summarise(latinx = sum(latinx_prison_pop, na.rm = TRUE))
+
+  
+asian_prison <- data %>%
+  select(year, aapi_prison_pop) %>%
+  group_by(year) %>%
+  filter(year > 2000)%>%
+  filter(year < 2017)%>%
+  group_by(year) %>%
+  summarise(asian = sum(aapi_prison_pop, na.rm = TRUE))
+
+white_prison <- data %>%
+  select(year, white_prison_pop) %>%
+  group_by(year) %>%
+  filter(year > 2000)%>%
+  filter(year < 2017)%>%
+  group_by(year) %>%
+  summarise(white = sum(white_prison_pop, na.rm = TRUE))
+
+other_prison <- data %>%
+  select(year, other_race_prison_pop) %>%
+  group_by(year) %>%
+  filter(year > 2000)%>%
+  filter(year < 2017)%>%
+  group_by(year) %>%
+  summarise(other = sum(other_race_prison_pop, na.rm = TRUE))
+
+total_prison <- data %>%
+  select(year, total_prison_pop) %>%
+  group_by(year) %>%
+  filter(year > 2000)%>%
+  filter(year < 2017)%>%
+  group_by(year) %>%
+  summarise(total = sum(total_prison_pop, na.rm = TRUE))
+
+native_prison <- data %>%
+  select(year, native_prison_pop) %>%
+  group_by(year) %>%
+  filter(year > 2000)%>%
+  filter(year < 2017)%>%
+  group_by(year) %>%
+  summarise(native = sum(native_prison_pop, na.rm = TRUE))
+  
+combined <- left_join(total_prison, black_prison, by="year")
+combined <- left_join(combined, asian_prison, by = "year")
+combined <- left_join(combined, latin_prison, by = "year")
+combined <- left_join(combined, native_prison, by = "year")
+combined <- left_join(combined, white_prison, by = "year")
+combined <- left_join(combined, other_prison, by = "year")
+
+chart_data <- combined %>%
+  gather(key = compare, value = population, native, total, other, white, asian, latinx, black  )
+
+
+trend_data <- plot_ly(
+  data = chart_data,
+  x = ~year,
+  y = ~population,
+  color = ~compare,
+  type = "scatter",
+  mode = "markers"
+) %>% layout(
+  title = "Prison Population by race from year 2000 to 2016",
+  xaxis = list(title = "Year"),
+  yaxis = list(title = "Prison population"),
+  legend = list(title = list(text = "<b> Demographic </b>"))
+)
+trend_data
+
+
+# compares two variables between white prison population to white population
+
+white_pop_total <- data %>%
+  select(year, white_pop_15to64) %>%
+  group_by(year) %>%
+  filter(year > 1990)%>%
+  filter(year < 2017)%>%
+  group_by(year) %>%
+  summarise(white_pop_total = sum(white_pop_15to64, na.rm = TRUE))
+
+white_prison_total <- data %>%
+  select(year, white_prison_pop) %>%
+  group_by(year) %>%
+  filter(year > 1990)%>%
+  filter(year < 2017)%>%
+  group_by(year) %>%
+  summarise(white_prison_total = sum(white_prison_pop, na.rm = TRUE))
+
+
+Compare <- left_join(white_prison_total, white_pop_total, by = "year")
+
+double_chart_data <- Compare %>%
+  gather(key = compare, value = population, white_pop_total,white_prison_total)
+
+two_chart <- plot_ly(
+  data = double_chart_data,
+  x = ~year,
+  y = ~population,
+  color = ~compare,
+  type = "scatter",
+  mode = "lines"
+) %>% layout(
+  title = "White American populaton compare to white prison",
+  xaxis = list(title = "Year"),
+  yaxis = list(title = "population")
+)
+two_chart
+
+
+
+# Map 
+state_shape <- map_data("state")
+state_data_2001 <- data %>%
+  filter(year == 2001) %>%
+  group_by(year, state) %>%
+  select(total_jail_pop, year, state)%>%
+  summarise(population = sum(total_jail_pop, na.rm = TRUE))
+s1 <- data_frame(state.abb, state.name)
+
+state_data_2001 <- left_join(state_data_2001, s1, by=c("state" = "state.abb"))
+state_data_2001 <- state_data_2001 %>%
+mutate(region = tolower(state.name))
+state_shape <- left_join(state_shape, state_data_2001)
+
+map <- ggplot(state_shape) +
+  geom_polygon(mapping = aes(x = long, y = lat, group = group, fill = population))+
+ scale_fill_continuous( low = "green" , high = "red", labels = scales::label_number_si())+
+  coord_map() + labs(title = "State Jail in 2001", fill = "state")
+ggplotly(map)

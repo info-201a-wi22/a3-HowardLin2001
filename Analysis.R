@@ -207,17 +207,22 @@ two_chart
 
 
 
-# Map the black prison by county from 1990 - 2017 
-black_prison_county <- data %>%
-  select(year, county_name, black_prison_pop) %>%
-  group_by(county_name)%>%
-  filter(year > 1990)%>%
-  filter(year < 2017)%>%
-  group_by(county_name) %>%
-summarise(black_prison_pop = sum(black_prison_pop, na.rm =TRUE))
+# Map 
+state_shape <- map_data("state")
+state_data_2001 <- data %>%
+  filter(year == 2001) %>%
+  group_by(year, state) %>%
+  select(total_jail_pop, year, state)%>%
+  summarise(population = sum(total_jail_pop, na.rm = TRUE))
+s1 <- data_frame(state.abb, state.name)
 
+state_data_2001 <- left_join(state_data_2001, s1, by=c("state" = "state.abb"))
+state_data_2001 <- state_data_2001 %>%
+mutate(region = tolower(state.name))
+state_shape <- left_join(state_shape, state_data_2001)
 
-
-
-
-
+map <- ggplot(state_shape) +
+  geom_polygon(mapping = aes(x = long, y = lat, group = group, fill = population))+
+ scale_fill_continuous( low = "green" , high = "red", labels = scales::label_number_si())+
+  coord_map() + labs(title = "State Jail in 2001", fill = "state")
+ggplotly(map)

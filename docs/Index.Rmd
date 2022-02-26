@@ -15,6 +15,9 @@ library(knitr)
 options(digits = 2)
 ```
 
+##Introduction 
+
+_According to the data set it has contain a massive data about the prison information. The main value I would like to focus on is the race of population prison for African American, White and Asian in year 2001. The reason I would set 2001 as my primary year is becasue 2001 is my birth year._   
 ##Summary
 
 _According to the summary section, the prison population of black, white and asian in 2001 have been listed out. According to the data, black prisons have the most population and asian prisons the least. Comparing the most and least race population to the total prison population. Asians have the proportion of 0.00455 and African American have the proportion of 0.35399. Due to the result we could determine that  there is a big gap between the races. I also summarize the location that contained the most race prison in 2001. The highest black prison county is New York County and the highest asian prison county is Honolulu County._
@@ -39,3 +42,10 @@ _My variable graph is to compare the white population from age 15-60  to white p
 _As we can see there is a huge gap between these two data. In the year 2000 there are 280.734k of white prison in the US and the population of white people was about 130.7884M._
 
 ##Map
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+map
+```
+
+_The chart have shows the population of jail in 2001 over the country. Reader can easily to determine which state have the highest population of prison and which state has the last._
+
+_According to the data, california have the highest population of prison and mid part of the country have the last._
